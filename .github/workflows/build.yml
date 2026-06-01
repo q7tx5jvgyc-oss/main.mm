@@ -1,4 +1,4 @@
-name: Build iOS Dylib with Theos
+name: Build iOS Dylib Fast
 
 on:
   workflow_dispatch:
@@ -14,26 +14,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Theos Dependencies
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Compile Moustache Dylib
         run: |
-          brew install ldid xz
-          
-      - name: Set up Theos Environment
-        run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-          
-      - name: Download iOS SDK
-        run: |
-          git clone https://github.com/theos/sdks.git $HOME/theos/sdks
-          
-      - name: Build with Theos
-        run: |
-          export THEOS=$HOME/theos
-          make package FINALPACKAGE=1
-          
-      - name: Upload Dylib Artifact
+          clang++ -dynamiclib -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+          -arch arm64 -arch arm64e \
+          -framework UIKit -framework CoreGraphics -framework QuartzCore \
+          main.mm -o AutoClicker.dylib
+
+      - name: Upload Moustache Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AutoClicker-Dylib
-          path: .theos/obj/debug/*.dylib
+          name: AutoClicker-Moustache-Package
+          path: ./AutoClicker.dylib
